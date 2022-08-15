@@ -24,10 +24,9 @@ export const GithubStep: React.FC = () => {
       const user: string = data;
       if (typeof user === 'string' && user.includes('avatarUrl')) {
         const json: TUserData = JSON.parse(user);
+        Cookies.set('token', json.token);
         setUserData(json);
         onNextStep();
-
-        Cookies.set('token', json.token);
       }
     });
   }, []);

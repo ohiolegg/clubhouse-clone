@@ -2,12 +2,16 @@ import type { NextPage } from 'next';
 import Head from 'next/head';
 import Image from 'next/image';
 import React from 'react';
+import { UserApi } from '../api/UserApi';
 import { ChooseAvatarStep } from '../components/steps/ChooseAvatarStep';
 import { EnterCodeStep } from '../components/steps/EnterCodeStep';
 import { EnterNameStep } from '../components/steps/EnterNameStep';
 import { EnterPhoneStep } from '../components/steps/EnterPhoneStep';
 import { GithubStep } from '../components/steps/GithubStep';
 import { WelcomeStep } from '../components/steps/WelcomeStep';
+import { checkAuth } from '../helpers/checkAuth';
+import Axios from '../core/axios';
+import { Api } from '../api';
 
 const stepsComponents = {
   0: WelcomeStep,
@@ -36,6 +40,14 @@ export interface TUserData {
   token?: string;
 }
 
+const getUserData = (): TUserData | null => {
+  try {
+    return JSON.parse(window.localStorage.getItem('userData'));
+  } catch (error) {
+    return null;
+  }
+};
+
 export const MainContext = React.createContext<MainContextProps>({} as MainContextProps);
 
 const Home: NextPage = () => {
@@ -54,7 +66,22 @@ const Home: NextPage = () => {
     }));
   };
 
-  console.log(userData);
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const json = getUserData();
+      if (json) {
+        setUserData(json);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (userData) {
+      console.log(userData.token);
+      window.localStorage.setItem('userData', JSON.stringify(userData));
+      Axios.defaults.headers.Authorization = 'Bearer ' + userData.token;
+    }
+  }, [userData]);
 
   return (
     <>
@@ -69,6 +96,36 @@ const Home: NextPage = () => {
       </MainContext.Provider>
     </>
   );
+};
+
+export const getServerSideProps = async (ctx) => {
+  try {
+    const user = await checkAuth(ctx);
+    const banned = await Api(ctx).checkBan();
+
+    if (banned.banned) {
+      return {
+        props: {},
+        redirect: {
+          permanent: false,
+          destination: '/banned',
+        },
+      };
+    }
+
+    if (user?.isActive === 1) {
+      return {
+        props: {},
+        redirect: {
+          permanent: false,
+          destination: '/rooms',
+        },
+      };
+    }
+  } catch (error) {}
+  return {
+    props: {},
+  };
 };
 
 export default Home;

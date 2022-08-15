@@ -4,16 +4,19 @@ dotenv.config({
 });
 
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import multer from 'multer';
-import cloudinary from './core/cloudinary';
 import cors from 'cors';
 
 import './core/db';
 import { passport } from './core/passport';
+import { UploadCtrl } from './controllers/uploadController';
+import { AuthCtrl } from './controllers/authController';
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(passport.initialize());
 app.use(cors());
 
@@ -22,34 +25,13 @@ const upload = multer({ storage });
 
 app.get('/auth/github', passport.authenticate('github', { session: false }));
 
-app.get('/auth/me', passport.authenticate('jwt', { session: false }), (req, res) => {
-  res.json(req.user);
-});
+app.get('/auth/me', passport.authenticate('jwt', { session: false }), AuthCtrl.getMe);
 
-app.post('/upload', upload.single('image'), (req: express.Request, res: express.Response) => {
-  const file = req.file;
+app.post('/auth/activate', passport.authenticate('jwt', { session: false }), AuthCtrl.activate);
+app.post('/auth/banned', passport.authenticate('jwt', { session: false }), AuthCtrl.ban);
+app.get('/auth/banned', passport.authenticate('jwt', { session: false }), AuthCtrl.checkBanned);
 
-  if (!file) {
-    return;
-  }
-
-  cloudinary.v2.uploader
-    .upload_stream({ resource_type: 'auto' }, (error, result) => {
-      if (!result || error) {
-        return res.status(500).json({
-          message: error || 'upload error',
-        });
-      }
-
-      res.status(201).json({
-        url: result.url,
-        size: Math.round(result.size / 1024),
-        height: result.height,
-        width: result.width,
-      });
-    })
-    .end(file.buffer);
-});
+app.post('/upload', upload.single('image'), UploadCtrl.upload);
 
 app.get(
   '/auth/github/callback',

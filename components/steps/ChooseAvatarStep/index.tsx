@@ -17,6 +17,11 @@ export interface fileObj {
 export const ChooseAvatarStep: React.FC = () => {
   const { onNextStep, userData, setFieldValue } = React.useContext(MainContext);
   const [avatar, setAvatar] = React.useState<fileObj>({ avatarUrl: userData.avatarUrl });
+  const [isLoading, setLoading] = React.useState<boolean>(false);
+  const letters = userData.fullname
+    .split(' ')
+    .map((s) => s[0])
+    .join('');
   const inputFileRef = React.useRef<HTMLInputElement>(null);
 
   const handleChangeImage = (event: Event): void => {
@@ -31,10 +36,12 @@ export const ChooseAvatarStep: React.FC = () => {
   };
 
   const nextStepHandler = async () => {
+    setLoading(true);
     if (avatar.file) {
       const data = await uploadImage(avatar.file);
       setFieldValue('avatarUrl', data);
     }
+    setLoading(false);
     onNextStep();
   };
 
@@ -48,12 +55,12 @@ export const ChooseAvatarStep: React.FC = () => {
     <div className={styles.block}>
       <StepInfo
         icon='/static/celebration.png'
-        title='Okay, Archakov Dennis!'
+        title={`Okay, ${userData.fullname}!`}
         description='How’s this photo?'
       />
       <WhiteBlock className={clsx('m-auto mt-40', styles.whiteBlock)}>
         <div className={styles.avatar}>
-          <Avatar width='120px' height='120px' src={avatar.avatarUrl} />
+          <Avatar width='120px' height='120px' src={avatar.avatarUrl} letters={letters} />
         </div>
         <div className='mb-30'>
           <label htmlFor='image' className='link cup'>
@@ -61,7 +68,7 @@ export const ChooseAvatarStep: React.FC = () => {
           </label>
         </div>
         <input id='image' ref={inputFileRef} type='file' hidden />
-        <Button onClick={nextStepHandler}>
+        <Button disabled={isLoading} onClick={nextStepHandler}>
           Next
           <img className='d-ib ml-10' src='/static/arrow.svg' />
         </Button>

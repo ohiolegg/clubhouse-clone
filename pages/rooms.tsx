@@ -3,22 +3,24 @@ import { Header } from '../components/Header';
 import { ConversationCard } from '../components/ConversationCard';
 import Link from 'next/link';
 import React from 'react';
+import { UserApi } from '../api/UserApi';
+import { checkAuth } from '../helpers/checkAuth';
+import { redirect } from 'next/dist/server/api-utils';
 import Axios from '../core/axios';
 
-export default function RoomsPage({rooms = []}) {
-
+export default function RoomsPage({ rooms = [] }) {
   return (
     <>
       <Header />
-      <div className="container">
-        <div className=" mt-40 d-flex align-items-center justify-content-between">
+      <div className='container'>
+        <div className=' mt-40 d-flex align-items-center justify-content-between'>
           <h1>All conversations</h1>
-          <Button color="green">+ Start room</Button>
+          <Button color='green'>+ Start room</Button>
         </div>
-        <div className="grid mt-30">
-          {rooms.map(obj => (
-            <Link key = {obj._id} href={`/rooms/${obj._id}`}>
-              <a className="d-flex">
+        <div className='grid mt-30'>
+          {rooms.map((obj) => (
+            <Link key={obj._id} href={`/rooms/${obj._id}`}>
+              <a className='d-flex'>
                 <ConversationCard
                   title={obj.title}
                   avatars={obj.avatars}
@@ -29,27 +31,39 @@ export default function RoomsPage({rooms = []}) {
               </a>
             </Link>
           ))}
-
         </div>
       </div>
     </>
   );
 }
 
-export const getServerSideProps = async () => {
+export const getServerSideProps = async (ctx) => {
   try {
-    const {data} = await Axios.get('/rooms.json')
-    return{
-      props: {
-        rooms: data
-      }
+    const user = await checkAuth(ctx);
+    console.log(user);
+
+    if (!user || user.isActive === 0) {
+      return {
+        props: {},
+        redirect: {
+          permanent: false,
+          destination: '/',
+        },
+      };
     }
+
+    return {
+      props: {
+        user,
+        rooms: [],
+      },
+    };
   } catch (error) {
-    console.log(error)
-    return{
+    console.log(error);
+    return {
       props: {
-        rooms: []
-      }
-    }
+        rooms: [],
+      },
+    };
   }
-}
+};
