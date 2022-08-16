@@ -7,19 +7,17 @@ import clsx from 'clsx';
 
 export interface ConversationCard {
   _id?: string;
-  title: string,
-  guests: string[],
-  avatars: string[],
-  guestsCount: number,
-  speakersCount: number,
+  title: string;
+  speakers: string[];
+  avatars: string[];
+  listenersCount: number;
 }
 
 export const ConversationCard: React.FC<ConversationCard> = ({
   title,
-  guests = [],
+  speakers = [],
   avatars = [],
-  guestsCount,
-  speakersCount,
+  listenersCount,
 }) => {
   return (
     <div className={clsx(whiteBlockStyles.block, styles.card, 'mb-30')}>
@@ -29,8 +27,8 @@ export const ConversationCard: React.FC<ConversationCard> = ({
           {avatars.map((url, i) => (
             <Avatar
               key={url}
-              width="45px"
-              height="45px"
+              width='45px'
+              height='45px'
               src={url}
               className={avatars.length > 1 && i === avatars.length - 1 ? 'lastAvatar' : ''}
             />
@@ -38,22 +36,23 @@ export const ConversationCard: React.FC<ConversationCard> = ({
         </div>
         <div className={clsx(styles.info, 'ml-10')}>
           <ul className={styles.users}>
-            {guests.map((name, i) => (
+            {speakers.map((name, i) => (
               <li key={name + i}>
-                {name} <img src="/static/cloud.png" alt="Cloud" width={14} height={14} />
+                {name} <img src='/static/cloud.png' alt='Cloud' width={14} height={14} />
               </li>
             ))}
           </ul>
           <ul className={styles.details}>
             <li>
-              {guestsCount} <img src="/static/user.svg" alt="Users count" width={12} height={12} />
+              {listenersCount}{' '}
+              <img src='/static/user.svg' alt='Users count' width={12} height={12} />
             </li>
             <li>
-              {speakersCount}
+              {speakers.length}
               <img
-                className="ml-5"
-                src="/static/message.svg"
-                alt="Users count"
+                className='ml-5'
+                src='/static/message.svg'
+                alt='Users count'
                 width={12}
                 height={12}
               />

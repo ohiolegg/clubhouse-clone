@@ -3,20 +3,30 @@ import { Header } from '../components/Header';
 import { ConversationCard } from '../components/ConversationCard';
 import Link from 'next/link';
 import React from 'react';
-import { UserApi } from '../api/UserApi';
 import { checkAuth } from '../helpers/checkAuth';
-import { redirect } from 'next/dist/server/api-utils';
-import Axios from '../core/axios';
+import { StartRoomModal } from '../components/StartRoomModal';
+import { Api } from '../api';
+import { Room } from '../api/RoomApi';
+import { GetServerSideProps, NextPage } from 'next';
 
-export default function RoomsPage({ rooms = [] }) {
+interface RoomPageProps {
+  rooms: Room[];
+}
+
+const RoomsPage: NextPage<RoomPageProps> = ({ rooms = [] }) => {
+  const [visibleModal, setVisibleModal] = React.useState<boolean>(false);
+
   return (
     <>
       <Header />
       <div className='container'>
         <div className=' mt-40 d-flex align-items-center justify-content-between'>
           <h1>All conversations</h1>
-          <Button color='green'>+ Start room</Button>
+          <Button onClick={() => setVisibleModal(true)} color='green'>
+            + Start room
+          </Button>
         </div>
+        {visibleModal && <StartRoomModal onClose={() => setVisibleModal(false)} />}
         <div className='grid mt-30'>
           {rooms.map((obj) => (
             <Link key={obj._id} href={`/rooms/${obj._id}`}>
@@ -24,9 +34,8 @@ export default function RoomsPage({ rooms = [] }) {
                 <ConversationCard
                   title={obj.title}
                   avatars={obj.avatars}
-                  guests={obj.guests}
-                  guestsCount={obj.guestsCount}
-                  speakersCount={obj.speakersCount}
+                  speakers={obj.speakers}
+                  listenersCount={obj.listenersCount}
                 />
               </a>
             </Link>
@@ -35,12 +44,12 @@ export default function RoomsPage({ rooms = [] }) {
       </div>
     </>
   );
-}
+};
 
-export const getServerSideProps = async (ctx) => {
+export const getServerSideProps: GetServerSideProps<RoomPageProps> = async (ctx) => {
   try {
     const user = await checkAuth(ctx);
-    console.log(user);
+    const rooms = await Api(ctx).getAllRooms();
 
     if (!user || user.isActive === 0) {
       return {
@@ -55,7 +64,7 @@ export const getServerSideProps = async (ctx) => {
     return {
       props: {
         user,
-        rooms: [],
+        rooms: rooms,
       },
     };
   } catch (error) {
@@ -67,3 +76,5 @@ export const getServerSideProps = async (ctx) => {
     };
   }
 };
+
+export default RoomsPage;

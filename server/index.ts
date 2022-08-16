@@ -12,6 +12,7 @@ import './core/db';
 import { passport } from './core/passport';
 import { UploadCtrl } from './controllers/uploadController';
 import { AuthCtrl } from './controllers/authController';
+import { RoomsCtrl } from './controllers/roomController';
 
 const app = express();
 
@@ -32,6 +33,11 @@ app.post('/auth/banned', passport.authenticate('jwt', { session: false }), AuthC
 app.get('/auth/banned', passport.authenticate('jwt', { session: false }), AuthCtrl.checkBanned);
 
 app.post('/upload', upload.single('image'), UploadCtrl.upload);
+
+app.get('/rooms', passport.authenticate('jwt', { session: false }), RoomsCtrl.index);
+app.post('/rooms', passport.authenticate('jwt', { session: false }), RoomsCtrl.create);
+app.get('/rooms/:id', passport.authenticate('jwt', { session: false }), RoomsCtrl.show);
+app.delete('/rooms/:id', passport.authenticate('jwt', { session: false }), RoomsCtrl.delete);
 
 app.get(
   '/auth/github/callback',
