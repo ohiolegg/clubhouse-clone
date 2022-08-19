@@ -4,19 +4,18 @@ import { Avatar } from '../Avatar';
 import styles from './ConversationCard.module.scss';
 import whiteBlockStyles from '../WhiteBlock/WhiteBlock.module.scss';
 import clsx from 'clsx';
+import { TUserData } from '../../pages';
 
 export interface ConversationCard {
   _id?: string;
   title: string;
-  speakers: string[];
-  avatars: string[];
+  speakers: TUserData[];
   listenersCount: number;
 }
 
 export const ConversationCard: React.FC<ConversationCard> = ({
   title,
   speakers = [],
-  avatars = [],
   listenersCount,
 }) => {
   return (
@@ -24,21 +23,21 @@ export const ConversationCard: React.FC<ConversationCard> = ({
       <h4 className={styles.title}>{title}</h4>
       <div className={clsx('d-flex mt-10', styles.content)}>
         <div className={styles.avatars}>
-          {avatars.map((url, i) => (
+          {speakers.map((user, i) => (
             <Avatar
-              key={url}
+              key={user.avatarUrl}
               width='45px'
               height='45px'
-              src={url}
-              className={avatars.length > 1 && i === avatars.length - 1 ? 'lastAvatar' : ''}
+              src={user.avatarUrl}
+              className={speakers.length > 1 && i === speakers.length - 1 ? 'lastAvatar' : ''}
             />
           ))}
         </div>
         <div className={clsx(styles.info, 'ml-10')}>
           <ul className={styles.users}>
-            {speakers.map((name, i) => (
-              <li key={name + i}>
-                {name} <img src='/static/cloud.png' alt='Cloud' width={14} height={14} />
+            {speakers.map((obj, i) => (
+              <li key={obj.fullname + i}>
+                {obj.fullname} <img src='/static/cloud.png' alt='Cloud' width={14} height={14} />
               </li>
             ))}
           </ul>

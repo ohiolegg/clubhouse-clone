@@ -4,22 +4,57 @@ dotenv.config({
 });
 
 import express from 'express';
-import cookieParser from 'cookie-parser';
 import multer from 'multer';
 import cors from 'cors';
+import socket from 'socket.io';
 
 import './core/db';
 import { passport } from './core/passport';
 import { UploadCtrl } from './controllers/uploadController';
 import { AuthCtrl } from './controllers/authController';
 import { RoomsCtrl } from './controllers/roomController';
+import { createServer } from 'http';
+import { Room } from '../models';
+import { TUserData } from '../pages';
+import { getUsersByRoom } from './utils/getUsersByRoom';
 
 const app = express();
+const server = createServer(app);
+const io = socket(server, {
+  cors: {
+    origin: '*',
+  },
+});
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(passport.initialize());
+const rooms: Record<string, { roomId: string; user: TUserData }> = {};
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+
+  socket.on('CLIENT@ROOMS:JOIN', async ({ user, roomId }) => {
+    socket.join(`room/${roomId}`);
+    rooms[socket.id] = { roomId, user };
+    const users = getUsersByRoom(rooms, roomId);
+    io.in(`room/${roomId}`).emit('SERVER@ROOMS:JOIN', users);
+    io.emit('SERVER@ROOMS:HOME', { users, roomId });
+    await Room.update({ speakers: users }, { where: { id: roomId } });
+  });
+
+  socket.on('disconnect', async () => {
+    if (rooms[socket.id]) {
+      const { roomId, user } = rooms[socket.id];
+      delete rooms[socket.id];
+      const users = getUsersByRoom(rooms, roomId);
+      io.in(`room/${roomId}`).emit('SERVER@ROOMS:DISCONNECT', users);
+      io.emit('SERVER@ROOMS:HOME', { users, roomId });
+      await Room.update({ speakers: users }, { where: { id: roomId } });
+    }
+  });
+});
+
 app.use(cors());
+app.use(express.json());
+app.use(passport.initialize());
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -51,6 +86,6 @@ app.get(
   },
 );
 
-app.listen(3004, () => {
+server.listen(3004, () => {
   console.log('SERVER OK');
 });

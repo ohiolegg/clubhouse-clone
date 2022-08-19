@@ -81,6 +81,7 @@ class AuthorizationController {
 
     try {
       await User.update({ ...user, isActive: 1 }, { where: { id: userId } });
+      console.log(user);
       res.send();
     } catch (error) {
       res.status(400).json({

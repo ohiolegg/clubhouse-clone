@@ -1,7 +1,7 @@
 import { Header } from '../components/Header';
 import React from 'react';
 import Axios from '../core/axios';
-import { checkAuth } from '../helpers/checkAuth';
+import { checkAuth } from '../server/utils/checkAuth';
 import { UserApi } from '../api/UserApi';
 import { Api } from '../api';
 

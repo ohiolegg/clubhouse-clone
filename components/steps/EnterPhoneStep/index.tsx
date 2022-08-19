@@ -9,7 +9,7 @@ import styles from './EnterPhoneStep.module.scss';
 import { MainContext } from '../../../pages';
 import Axios from '../../../core/axios';
 import { useRouter } from 'next/router';
-import { checkAuth } from '../../../helpers/checkAuth';
+import { checkAuth } from '../../../server/utils/checkAuth';
 
 function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);

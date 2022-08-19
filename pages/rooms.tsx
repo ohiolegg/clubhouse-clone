@@ -3,19 +3,32 @@ import { Header } from '../components/Header';
 import { ConversationCard } from '../components/ConversationCard';
 import Link from 'next/link';
 import React from 'react';
-import { checkAuth } from '../helpers/checkAuth';
+import { checkAuth } from '../server/utils/checkAuth';
 import { StartRoomModal } from '../components/StartRoomModal';
 import { Api } from '../api';
 import { Room } from '../api/RoomApi';
 import { GetServerSideProps, NextPage } from 'next';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { wrapper } from '../redux/store';
+import { setRooms, setRoomSpeakers } from '../redux/slices/roomSlice';
+import { setUserData } from '../redux/slices/userSlice';
+import { useSocket } from '../hooks/useSocket';
+import { io, Socket } from 'socket.io-client';
 
-interface RoomPageProps {
-  rooms: Room[];
-}
-
-const RoomsPage: NextPage<RoomPageProps> = ({ rooms = [] }) => {
+const RoomsPage: NextPage = () => {
   const [visibleModal, setVisibleModal] = React.useState<boolean>(false);
+  const rooms = useAppSelector((state) => state.rooms.items);
+  const socketRef = React.useRef<Socket>();
+  const dispatch = useAppDispatch();
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      socketRef.current = io('http://localhost:3004');
+      socketRef.current.on('SERVER@ROOMS:HOME', ({ users, roomId }) => {
+        dispatch(setRoomSpeakers({ speakers: users, roomId: Number(roomId) }));
+      });
+    }
+  }, []);
   return (
     <>
       <Header />
@@ -29,11 +42,10 @@ const RoomsPage: NextPage<RoomPageProps> = ({ rooms = [] }) => {
         {visibleModal && <StartRoomModal onClose={() => setVisibleModal(false)} />}
         <div className='grid mt-30'>
           {rooms.map((obj) => (
-            <Link key={obj._id} href={`/rooms/${obj._id}`}>
+            <Link key={obj.id} href={`/rooms/${obj.id}`}>
               <a className='d-flex'>
                 <ConversationCard
                   title={obj.title}
-                  avatars={obj.avatars}
                   speakers={obj.speakers}
                   listenersCount={obj.listenersCount}
                 />
@@ -46,35 +58,36 @@ const RoomsPage: NextPage<RoomPageProps> = ({ rooms = [] }) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps<RoomPageProps> = async (ctx) => {
-  try {
-    const user = await checkAuth(ctx);
-    const rooms = await Api(ctx).getAllRooms();
+export const getServerSideProps: GetServerSideProps = wrapper.getServerSideProps(
+  (store) => async (ctx) => {
+    try {
+      const user = await checkAuth(ctx);
 
-    if (!user || user.isActive === 0) {
+      if (!user) {
+        return {
+          props: {},
+          redirect: {
+            permanent: false,
+            destination: '/',
+          },
+        };
+      }
+
+      const rooms = await Api(ctx).getAllRooms();
+
+      store.dispatch(setRooms(rooms));
+      store.dispatch(setUserData(user));
+
       return {
         props: {},
-        redirect: {
-          permanent: false,
-          destination: '/',
-        },
+      };
+    } catch (error) {
+      console.log('ERROR!');
+      return {
+        props: {},
       };
     }
-
-    return {
-      props: {
-        user,
-        rooms: rooms,
-      },
-    };
-  } catch (error) {
-    console.log(error);
-    return {
-      props: {
-        rooms: [],
-      },
-    };
-  }
-};
+  },
+);
 
 export default RoomsPage;

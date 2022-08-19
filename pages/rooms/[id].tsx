@@ -1,13 +1,20 @@
-import { GetServerSidePropsContext } from 'next';
-import { useRouter } from 'next/router';
 import React from 'react';
 import { Api } from '../../api';
 import { BackButton } from '../../components/BackButton';
 import { Header } from '../../components/Header';
 import { Room } from '../../components/Room';
-import Axios from '../../core/axios';
+import { checkAuth } from '../../server/utils/checkAuth';
+import { setUserData } from '../../redux/slices/userSlice';
+import { wrapper } from '../../redux/store';
+import { Room as TRoom } from '../../api/RoomApi';
+import { TUserData } from '..';
 
-export default function RoomPage({ room }) {
+interface RoomPageProps {
+  room: TRoom;
+  user: TUserData;
+}
+
+export default function RoomPage({ room, user }: RoomPageProps) {
   return (
     <>
       <Header />
@@ -19,8 +26,19 @@ export default function RoomPage({ room }) {
   );
 }
 
-export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+export const getServerSideProps = wrapper.getServerSideProps((store) => async (ctx) => {
   try {
+    const user = await checkAuth(ctx);
+
+    if (!user) {
+      return {
+        props: {},
+        redirect: {
+          permanent: false,
+          destination: '/',
+        },
+      };
+    }
     const roomId = ctx.query.id;
     if (!roomId) {
       return {
@@ -31,6 +49,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
         },
       };
     }
+
+    store.dispatch(setUserData(user));
     const room = await Api(ctx).getOneRoom(roomId as string);
 
     return {
@@ -48,4 +68,4 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       },
     };
   }
-};
+});

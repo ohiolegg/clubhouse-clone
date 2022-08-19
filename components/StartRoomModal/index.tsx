@@ -1,8 +1,11 @@
+import { unwrapResult } from '@reduxjs/toolkit';
 import clsx from 'clsx';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { RoomApi, RoomType } from '../../api/RoomApi';
 import Axios from '../../core/axios';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { fetchCreateRoom } from '../../redux/slices/roomSlice';
 import { Button } from '../Button';
 
 import styles from './StartRoomModal.module.scss';
@@ -15,14 +18,17 @@ export const StartRoomModal: React.FC<StartRoomModalProps> = ({ onClose }) => {
   const router = useRouter();
   const [title, setTitle] = React.useState<string>('');
   const [type, setType] = React.useState<RoomType>('open');
+  const dispatch = useAppDispatch();
 
   const onSubmit = async () => {
     try {
       if (!title) {
         return alert('Missing title of the room');
       }
-      const room = await RoomApi(Axios).createRoom({ title, type });
-      router.push(`/rooms/${room.id}`);
+      const resultAction = await dispatch(fetchCreateRoom({ title, type }));
+      const data = unwrapResult(resultAction);
+
+      router.push(`/rooms/${data.id}`);
     } catch (error) {
       alert('Error on creating room');
     }

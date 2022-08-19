@@ -9,9 +9,11 @@ import { EnterNameStep } from '../components/steps/EnterNameStep';
 import { EnterPhoneStep } from '../components/steps/EnterPhoneStep';
 import { GithubStep } from '../components/steps/GithubStep';
 import { WelcomeStep } from '../components/steps/WelcomeStep';
-import { checkAuth } from '../helpers/checkAuth';
+import { checkAuth } from '../server/utils/checkAuth';
 import Axios from '../core/axios';
 import { Api } from '../api';
+import { wrapper } from '../redux/store';
+import { setUserData } from '../redux/slices/userSlice';
 
 const stepsComponents = {
   0: WelcomeStep,
@@ -98,7 +100,7 @@ const Home: NextPage = () => {
   );
 };
 
-export const getServerSideProps = async (ctx) => {
+export const getServerSideProps = wrapper.getServerSideProps((store) => async (ctx) => {
   try {
     const user = await checkAuth(ctx);
     const banned = await Api(ctx).checkBan();
@@ -114,6 +116,7 @@ export const getServerSideProps = async (ctx) => {
     }
 
     if (user?.isActive === 1) {
+      store.dispatch(setUserData(user));
       return {
         props: {},
         redirect: {
@@ -126,6 +129,6 @@ export const getServerSideProps = async (ctx) => {
   return {
     props: {},
   };
-};
+});
 
 export default Home;
