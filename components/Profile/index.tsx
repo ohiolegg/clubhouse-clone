@@ -14,8 +14,7 @@ interface ProfileProps {
   about: string;
 }
 
-export const Profile: React.FC<ProfileProps> = () => {
-  const userData = useAppSelector((state) => state.user.data);
+export const Profile: React.FC<ProfileProps> = ({ avatarUrl, fullname, username, about }) => {
   return (
     <>
       <Link href='/rooms'>
@@ -27,10 +26,10 @@ export const Profile: React.FC<ProfileProps> = () => {
 
       <div className='d-flex  align-items-center'>
         <div className='d-flex align-items-center'>
-          <Avatar src={userData?.avatarUrl || ''} width='100px' height='100px' />
+          <Avatar src={avatarUrl || ''} width='100px' height='100px' />
           <div className='d-flex flex-column ml-30 mr-30'>
-            <h2 className='mt-0 mb-0'>{userData?.fullname}</h2>
-            <h3 className={clsx(styles.username, 'mt-0 mb-0')}>@{userData?.username}</h3>
+            <h2 className='mt-0 mb-0'>{fullname}</h2>
+            <h3 className={clsx(styles.username, 'mt-0 mb-0')}>@{username}</h3>
           </div>
         </div>
         <Button className={styles.followButton} color='blue'>

@@ -12,5 +12,10 @@ export const UserApi = (instance: AxiosInstance) => {
       const { data } = await instance.get('/auth/banned');
       return data;
     },
+
+    getUserInfo: async (userId: number): Promise<TUserData> => {
+      const { data } = await instance.get(`user/${userId}`);
+      return data;
+    },
   };
 };

@@ -40,12 +40,24 @@ io.on('connection', (socket) => {
     await Room.update({ speakers: users }, { where: { id: roomId } });
   });
 
+  socket.on('CLIENT@ROOMS:CALL', async ({ targetUserId, callerUserId, roomId, signal }) => {
+    socket.broadcast
+      .in(`room/${roomId}`)
+      .emit('SERVER@ROOMS:CALL', { targetUserId, callerUserId, signal });
+  });
+
+  socket.on('CLIENT@ROOMS:ANSWER', async ({ targetUserId, callerUserId, roomId, signal }) => {
+    socket.broadcast
+      .in(`room/${roomId}`)
+      .emit('SERVER@ROOMS:ANSWER', { targetUserId, callerUserId, signal });
+  });
+
   socket.on('disconnect', async () => {
     if (rooms[socket.id]) {
       const { roomId, user } = rooms[socket.id];
       delete rooms[socket.id];
       const users = getUsersByRoom(rooms, roomId);
-      io.in(`room/${roomId}`).emit('SERVER@ROOMS:DISCONNECT', users);
+      io.in(`room/${roomId}`).emit('SERVER@ROOMS:DISCONNECT', user);
       io.emit('SERVER@ROOMS:HOME', { users, roomId });
       await Room.update({ speakers: users }, { where: { id: roomId } });
     }
@@ -62,6 +74,7 @@ const upload = multer({ storage });
 app.get('/auth/github', passport.authenticate('github', { session: false }));
 
 app.get('/auth/me', passport.authenticate('jwt', { session: false }), AuthCtrl.getMe);
+app.get('/user/:id', passport.authenticate('jwt', { session: false }), AuthCtrl.getUserInfo);
 
 app.post('/auth/activate', passport.authenticate('jwt', { session: false }), AuthCtrl.activate);
 app.post('/auth/banned', passport.authenticate('jwt', { session: false }), AuthCtrl.ban);

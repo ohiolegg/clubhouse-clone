@@ -33,6 +33,28 @@ class AuthorizationController {
     }
   }
 
+  async getUserInfo(req: express.Request, res: express.Response) {
+    const userId = req.params.id;
+
+    try {
+      const findUser = await User.findByPk(userId);
+      console.log(findUser, userId);
+
+      if (findUser) {
+        res.json(await findUser);
+      } else {
+        res.status(400).json({
+          message: 'User was not found',
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: 'Error on user search',
+      });
+    }
+  }
+
   async checkBanned(req: express.Request, res: express.Response) {
     const userId = (req.user as TUserData).id;
 
